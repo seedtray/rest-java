@@ -18,7 +18,6 @@ public class UrlPattern {
   public static class MatchResult {
 
     private static final MatchResult EMPTY = new MatchResult();
-
     private final Map<String, String> params;
 
     public MatchResult() {
