@@ -1,13 +1,23 @@
 package org.seedtray.rest.sample;
 
-import org.seedtray.rest.annotation.RestMethod;
-import org.seedtray.rest.annotation.RestResource;
+import org.seedtray.rest.UrlPattern.Parameters;
+import org.seedtray.rest.annotation.Path;
 
-@RestResource(path = "/id")
+import com.google.inject.Inject;
+import com.google.inject.Provider;
+
+@Path("/{id}")
 public class IdResource {
 
-  @RestMethod(path = "get")
+  private final Provider<Parameters> matchResult;
+
+  @Inject
+  public IdResource(Provider<Parameters> matchResult) {
+    this.matchResult = matchResult;
+  }
+
+  @Path("/get")
   public void getId() {
-    System.out.println("Holaaaaa!");
+    System.out.println("Holaaaaa " + matchResult.get().getParameter("id") + "!!");
   }
 }

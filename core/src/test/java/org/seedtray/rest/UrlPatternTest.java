@@ -1,6 +1,6 @@
 package org.seedtray.rest;
 
-import org.seedtray.rest.UrlPattern.MatchResult;
+import org.seedtray.rest.UrlPattern.Parameters;
 
 import com.google.common.base.Optional;
 
@@ -20,6 +20,8 @@ public class UrlPatternTest extends TestCase {
 
   public void testUrlPattern_regexpPatterns() {
     assertParam("/profiles/{id}", "/profiles/1", "id", "1");
+    assertParam("/profiles/{id}s", "/profiles/1s", "id", "1");
+    assertParam("/profiles/s{id}", "/profiles/s1", "id", "1");
     assertParam("/profiles/{id}/{action}", "/profiles/1/delete", "id", "1");
     assertParam("/profiles/{id}/{action}", "/profiles/1/delete", "action", "delete");
 
@@ -39,19 +41,19 @@ public class UrlPatternTest extends TestCase {
     assertParam("/profiles/{path : [[\\w/]*]}", "/profiles/some/path", "path", "some/path");
   }
 
-  private MatchResult assertUrlMatches(String template, String url) {
-    Optional<MatchResult> result = new UrlPattern(template).match(url);
+  private Parameters assertUrlMatches(String template, String url) {
+    Optional<Parameters> result = new UrlPattern(template).match(url);
     assertTrue(result.isPresent());
     return result.get();
   }
 
   private void assertUrlFails(String template, String url) {
-    Optional<MatchResult> result = new UrlPattern(template).match(url);
+    Optional<Parameters> result = new UrlPattern(template).match(url);
     assertFalse(result.isPresent());
   }
 
   private void assertParam(String template, String url, String name, String value) {
-    MatchResult result = assertUrlMatches(template, url);
+    Parameters result = assertUrlMatches(template, url);
     assertEquals(value, result.getParameter(name));
   }
 }

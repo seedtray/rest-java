@@ -1,19 +1,17 @@
-package org.seedtray.rest.servlet;
+package org.seedtray.rest;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+/**
+ * Class and method metadata needed to handle a request.
+ */
+class RestInvokableMethod {
 
-import org.seedtray.rest.UrlPattern.MatchResult;
-
-public class RestInvokableMethod {
-
-  private Class<?> resource;
-  private Method method;
+  private final Class<?> resource;
+  private final Method method;
 
   public RestInvokableMethod(Class<?> resource, Method method) {
     this.resource = checkNotNull(resource);
@@ -24,9 +22,7 @@ public class RestInvokableMethod {
     return resource;
   }
 
-  public void execute(Object receiver, MatchResult matchResult, HttpServletRequest request,
-      HttpServletResponse response) {
-
+  public void execute(Object receiver) {
     try {
       method.invoke(receiver);
     } catch (IllegalAccessException e) {
@@ -37,5 +33,4 @@ public class RestInvokableMethod {
       throw new RuntimeException(e);
     }
   }
-
 }

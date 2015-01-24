@@ -1,16 +1,17 @@
-package org.seedtray.rest.guice;
+package org.seedtray.rest;
 
 import java.util.Set;
 
-import org.seedtray.rest.servlet.RestFilter;
-
 import com.google.common.collect.Sets;
+import com.google.inject.Provides;
 import com.google.inject.TypeLiteral;
 import com.google.inject.name.Names;
+import com.google.inject.servlet.RequestScoped;
 import com.google.inject.servlet.ServletModule;
 
-public abstract class BaseRestModule extends ServletModule {
+public abstract class RestModule extends ServletModule {
 
+  static final String RESOURCES_KEY = "resources";
   private final Set<Class<?>> resources = Sets.newHashSet();
 
   @Override
@@ -20,8 +21,12 @@ public abstract class BaseRestModule extends ServletModule {
 
     configureResources();
 
-    bind(new TypeLiteral<Set<Class<?>>>() {})
-        .annotatedWith(Names.named("resources")).toInstance(resources);
+    bind(new TypeLiteral<Set<Class<?>>>() {}).annotatedWith(Names.named(RESOURCES_KEY))
+        .toInstance(resources);
+  }
+
+  @Provides @RequestScoped UrlPattern.Parameters provideMatchResult() {
+    return RestFilter.getMatchResult();
   }
 
   protected abstract void configureResources();

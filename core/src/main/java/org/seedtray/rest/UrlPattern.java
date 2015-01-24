@@ -11,25 +11,30 @@ import java.util.regex.PatternSyntaxException;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 
+/**
+ * A URL pattern.
+ * TODO(julian): Add more docs. Document pattern grammar.
+ */
 public class UrlPattern {
 
-  public static class MatchResult {
+  /**
+   * Url pattern parameters.
+   */
+  public static class Parameters {
 
-    private static final MatchResult EMPTY = new MatchResult();
+    private static final Parameters EMPTY =
+        new Parameters(ImmutableMap.<String, String>of());
     private final Map<String, String> params;
 
-    public MatchResult() {
-      params = Maps.newLinkedHashMap();
+    public Parameters(Map<String, String> params) {
+      this.params = ImmutableMap.copyOf(params);
     }
 
     public String getParameter(String name) {
       return params.get(name);
-    }
-
-    void addParameter(String name, String value) {
-      params.put(name, value);
     }
   }
 
@@ -94,7 +99,7 @@ public class UrlPattern {
             paramName, regexp));
   }
 
-  public Optional<MatchResult> match(String url) {
+  public Optional<Parameters> match(String url) {
     Matcher m = pattern.matcher(url);
 
     if (!m.matches()) {
@@ -102,14 +107,15 @@ public class UrlPattern {
     }
 
     if (names.isEmpty()) {
-      return Optional.of(MatchResult.EMPTY);
+      return Optional.of(Parameters.EMPTY);
     }
 
-    MatchResult result = new MatchResult();
+    int numParams = m.groupCount();
+    Map<String, String> params = Maps.newHashMapWithExpectedSize(numParams);
     for (int i = 0; i < m.groupCount(); i++) {
-      result.addParameter(names.get(i), m.group(i + 1));
+      params.put(names.get(i), m.group(i + 1));
     }
 
-    return Optional.of(result);
+    return Optional.of(new Parameters(params));
   }
 }

@@ -6,8 +6,11 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-@Target({ ElementType.METHOD})
+/**
+ * A URL pattern path.
+ */
+@Target({ ElementType.TYPE, ElementType.METHOD })
 @Retention(RUNTIME)
-public @interface RestMethod {
-  String path();
+public @interface Path {
+  String value();
 }
