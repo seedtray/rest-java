@@ -1,12 +1,14 @@
 package org.seedtray.rest.sample;
 
+import org.seedtray.rest.HttpMethod;
 import org.seedtray.rest.UrlPattern.Parameters;
-import org.seedtray.rest.annotation.Path;
+import org.seedtray.rest.annotation.Endpoint;
+import org.seedtray.rest.annotation.Resource;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 
-@Path("/{id}")
+@Resource("/{id}")
 public class IdResource {
 
   private final Provider<Parameters> matchResult;
@@ -16,8 +18,8 @@ public class IdResource {
     this.matchResult = matchResult;
   }
 
-  @Path("/get")
+  @Endpoint(method = HttpMethod.GET, path = "/get")
   public void getId() {
-    System.out.println("Holaaaaa " + matchResult.get().getParameter("id") + "!!");
+    System.out.println("id is " + matchResult.get().getParameter("id"));
   }
 }

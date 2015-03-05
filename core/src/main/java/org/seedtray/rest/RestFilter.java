@@ -5,7 +5,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.util.Map;
 import java.util.Set;
 
 import javax.servlet.Filter;
@@ -17,11 +16,13 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.google.common.collect.ImmutableTable;
+import com.google.common.collect.Table;
+import org.seedtray.rest.annotation.Endpoint;
 import org.seedtray.rest.UrlPattern.Parameters;
-import org.seedtray.rest.annotation.Path;
+import org.seedtray.rest.annotation.Resource;
 
 import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.OutOfScopeException;
@@ -29,13 +30,14 @@ import com.google.inject.name.Named;
 import com.google.inject.servlet.GuiceFilter;
 
 /**
- * An HTTP {@link Filter} that routes requests to classes annotated with {@link Path}.
+ * An HTTP {@link Filter} that routes requests to methods annotated with {@link Endpoint} of classes annotated
+ * with {@link Resource}.
  */
 public class RestFilter implements Filter {
 
   static final ThreadLocal<Context> localContext = new ThreadLocal<Context>();
 
-  private final Map<UrlPattern, RestInvokableMethod> methodsByUrlPattern;
+  private final Table<String, UrlPattern, RestInvokableMethod> methodTable;
   private final Injector guiceInjector;
 
   @Inject
@@ -44,18 +46,20 @@ public class RestFilter implements Filter {
 
     this.guiceInjector = checkNotNull(guiceInjector);
 
-    ImmutableMap.Builder<UrlPattern, RestInvokableMethod> builder = ImmutableMap.builder();
+    ImmutableTable.Builder<String, UrlPattern, RestInvokableMethod> builder = ImmutableTable.builder();
     for (Class<?> resource : resources) {
-      checkArgument(resource.isAnnotationPresent(Path.class),
-          "Missing @RestResource annotation: " + resource.getName());
+      checkArgument(resource.isAnnotationPresent(Resource.class),
+          "Missing @Resource annotation: " + resource.getName());
       for (Method method : resource.getMethods()) {
-        if (method.isAnnotationPresent(Path.class)) {
-          builder.put(getMethodUrlPattern(resource, method),
+        if (method.isAnnotationPresent(Endpoint.class)) {
+          Endpoint endpoint = method.getAnnotation(Endpoint.class);
+          builder.put(endpoint.method(), getMethodUrlPattern(resource, method),
               new RestInvokableMethod(resource, method));
         }
       }
     }
-    methodsByUrlPattern = builder.build();
+
+    methodTable = builder.build();
   }
 
   @Override
@@ -69,7 +73,7 @@ public class RestFilter implements Filter {
     try {
       if (request instanceof HttpServletRequest) {
         doFilter((HttpServletRequest) request, (HttpServletResponse) response, chain);
-      }      
+      }
     } finally {
       localContext.set(previous);
     }
@@ -78,12 +82,13 @@ public class RestFilter implements Filter {
   private void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
       throws IOException, ServletException {
     String path = request.getServletPath();
-    for (UrlPattern pattern : methodsByUrlPattern.keySet()) {
+    String httpMethod = request.getMethod();
+    for (UrlPattern pattern : methodTable.row(httpMethod).keySet()) {
       Optional<Parameters> matchResult = pattern.match(path);
       if (matchResult.isPresent()) {
         Parameters result = matchResult.get();
         localContext.set(new Context(result));
-        RestInvokableMethod invokableMethod = methodsByUrlPattern.get(pattern);
+        RestInvokableMethod invokableMethod = methodTable.get(httpMethod, pattern);
         Object instance = guiceInjector.getInstance(invokableMethod.getResource());
         invokableMethod.execute(instance);
       }
@@ -96,9 +101,9 @@ public class RestFilter implements Filter {
   }
 
   private UrlPattern getMethodUrlPattern(Class<?> resourceClass, Method method) {
-    Path resourceInfo = resourceClass.getAnnotation(Path.class);
-    Path methodInfo = method.getAnnotation(Path.class);
-    return new UrlPattern(resourceInfo.value() + methodInfo.value());
+    Resource resourceAnnotation = resourceClass.getAnnotation(Resource.class);
+    Endpoint methodAnnotation = method.getAnnotation(Endpoint.class);
+    return new UrlPattern(resourceAnnotation.value() + methodAnnotation.path());
   }
 
   public static Parameters getMatchResult() {
@@ -108,8 +113,8 @@ public class RestFilter implements Filter {
   private static Context getContext() {
     Context context = localContext.get();
     if (context == null) {
-      throw new OutOfScopeException("Cannot access scoped object. Either we"
-          + " are not currently inside an HTTP Servlet request, or you may"
+      throw new OutOfScopeException("Cannot access scoped object. Either you"
+          + " are not inside an HTTP Servlet request, or you may"
           + " have forgotten to apply " + GuiceFilter.class.getName()
           + " as a servlet filter for this request.");
     }
