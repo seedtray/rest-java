@@ -14,6 +14,13 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 @Documented
 public @interface Endpoint {
+  /**
+   * Typically one of the standard HTTP methods defined in {@link org.seedtray.rest.HttpMethod}.
+   */
   String method();
+
+  /**
+   * A relative path within this resource that is mapped to the annotated method.
+   */
   String path();
 }
