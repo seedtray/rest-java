@@ -8,14 +8,12 @@ public class SampleModule extends AbstractModule {
 
   @Override
   protected void configure() {
-    install(new SampleRestModule());
-  }
-
-  public static class SampleRestModule extends RestModule {
-    @Override
-    protected void configureResources() {
-      serveResource(IdResource.class);
-    }
+    install(new RestModule() {
+      @Override
+      protected void configureResources() {
+        serveResource(IdResource.class);
+      }
+    });
   }
 
 }

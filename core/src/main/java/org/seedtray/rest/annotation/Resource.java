@@ -2,15 +2,17 @@ package org.seedtray.rest.annotation;
 
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
- * A URL pattern path.
+ * Annotation for REST resources.
  */
-@Target({ ElementType.TYPE, ElementType.METHOD })
+@Target(ElementType.TYPE)
 @Retention(RUNTIME)
-public @interface Path {
+@Documented
+public @interface Resource {
   String value();
 }
